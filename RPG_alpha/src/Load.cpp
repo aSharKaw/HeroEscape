@@ -11,22 +11,22 @@ Load::~Load()
 {
 }
 
-void Load::LoadManager(string data_name)
-{
-	propertyTree::ptree pt;
-	read_ini("res/save1.ini", pt);
-
-	if (boost::optional<any> value = pt.get_optional<any>(data_name))
-	{
-		//return value.get();
-	}
-	else
-	{
-		cout << "Name : データ無し" << endl;
-	}
-
-	cout << "ロードしました。" << endl;
-}
+//void Load::LoadManager(string data_name)
+//{
+//	propertyTree::ptree pt;
+//	read_ini("res/save1.ini", pt);
+//
+//	if (boost::optional<any> value = pt.get_optional<any>(data_name))
+//	{
+//		//return value.get();
+//	}
+//	else
+//	{
+//		cout << "Name : データ無し" << endl;
+//	}
+//
+//	cout << "ロードしました。" << endl;
+//}
 
 string Load::getName()
 {

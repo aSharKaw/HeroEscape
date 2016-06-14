@@ -2,6 +2,9 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <random>
+#include <Siv3D.hpp>
+
+
 
 using namespace std;
 using namespace boost;
