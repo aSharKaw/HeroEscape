@@ -6,13 +6,16 @@ CEscape2D::CEscape2D()
 {
 	reset();
 
-	//乱数シード値を時間から取得
-	Reseed(DateTime::Now().second);
+	//音の準備
+	title_bgm.setLoop(true);
+	title_bgm.setVolume(bgmValue);
+	game_bgm.setLoop(true);
+	game_bgm.setVolume(bgmValue);
+	result_bgm.setLoop(true);
+	result_bgm.setVolume(bgmValue);
 
-	ITEM item_info[]
-	{
-		{}
-	};
+	result_se.setVolume(bgmValue);
+
 }
 
 
@@ -22,56 +25,85 @@ CEscape2D::~CEscape2D()
 
 void CEscape2D::reset()
 {
+	//乱数シード値を時間から取得
+	Reseed(DateTime::Now().second);
+
 	mode = 0;
 	angle = 0;
+	count = 0;
+
+	flug = false;
 
 	player_size = Window::WIDTH / 16.0f;
-	player_x = Window::WIDTH / 2;
-	player_y = Window::HEIGHT / 2;
+	playerPos = Vec2(Window::WIDTH / 2, Window::HEIGHT / 2);
 	move_speed = 5.0f;
-	//player_collider = Rect(player_x, player_y, player_size, player_size);
-
 
 	if (!FontManager::Register(L"res/font/PixelMplus12-Regular.ttf"))
 	{
 		font = Font(30);
+		bigFont = Font(50);
 		return;
 	}
 	else
 	{
 		font = Font(30, L"PixelMplus12");
+		bigFont = Font(50, L"PixelMplus12");
 	}
 
+	itemNum = Random(0, 7);
+	itemPos = Vec2(Random(50.0f, (float)Window::WIDTH - 50.0f), Random(50.0f, (float)Window::HEIGHT - 50.0f));
+	//Item = item_info[itemNum];
+
+	enemy1Pos = Vec2(50, 50);
+	enemy2Pos = Vec2(700, 50);
+	enemy3Pos = Vec2(Window::WIDTH / 2, 700);
+
+	enemy_flag = false;
+	dummy_flug = false;
 
 	score = 0;
 	//hiScore = 0;
+	hitCount = 0;
 
 	haveItem = 0;
 	goalItem = 8;
+
+	bgmValue = 0.8f;
 
 	textWindow = Rect(0, 5, Window::WIDTH, 60);
 }
 
 void CEscape2D::main()
 {
-
+	//メインループ
 	switch (mode)
 	{
 	case 0:
-		if (Input::KeySpace.clicked)
+		if (count > 60 * 4)
 		{
-			angle = 0;
 			mode = 1;
+			count = 0;
+			angle = 0;
+			flug = false;
 		}
 		title();
 		break;
 	case 1:
 		game();
-		if (Input::KeySpace.clicked) haveItem = goalItem;
-		if (haveItem == goalItem) mode = 2;
+		if (angle > 255)
+		{
+			angle = 0;
+			mode = 2;
+		}
 		break;
 	case 2:
 		result();
+		
+		if (count > 60 * 4)
+		{
+			reset();
+		}
+
 		break;
 	default:
 		break;
@@ -80,25 +112,66 @@ void CEscape2D::main()
 
 void CEscape2D::title()
 {
+	result_bgm.stop();
+
+
+	//ハイスコアのロード
+	hiScore = scoreRead.getOr<int>(L"Score.hiScore", 99 * 60);
+	hiHitCount = scoreRead.getOr<int>(L"Score.hiHitCount", 99);
+
+
+	//画像表示
 	texture_titleBG.resize(Window::WIDTH, Window::HEIGHT).draw();
-	texture_cloud(angle, angle, Window::WIDTH, Window::HEIGHT)/*.uv(angle, angle, Window::WIDTH, Window::HEIGHT)*/
+	texture_cloud(angle, angle, Window::WIDTH, Window::HEIGHT)
 		.resize(Window::WIDTH, Window::HEIGHT).draw();
 	texture_titleLogo.resize(Window::WIDTH, Window::HEIGHT).draw();
-	
+
 	//テキスト表示
 	textWindow.draw(Color(255, 255, 255, 100));
-	font(L"HiScore : ", hiScore).draw(10, 5, Color(0, 0, 0));
-
-	//font(DateTime::Now()).draw(50, 50, Color(Palette::Black));
+	font(L"HiScore:", hiScore / 60, L"sec").draw(10, 5, Color(0, 0, 0));
+	font(L"EnemyHit:", hiHitCount).draw(Window::WIDTH / 2, 5, Color(0, 0, 0));
 
 	//雲移動
 	angle++;
+
+	if (Input::AnyKeyClicked())
+	{
+		flug = true;
+		//angle = 0;
+	}
+
+	if (flug)
+	{
+		count++;
+		title_bgm.pause(3.0s);
+		
+		angle += count / 60;
+
+		//angle += angle;
+		texture_cloud(angle + angle, angle + angle + 50, Window::WIDTH, Window::HEIGHT)
+			.resize(Window::WIDTH, Window::HEIGHT).draw(Color(Palette::White, count));
+		texture_cloud(angle + angle / 2, angle + 100, Window::WIDTH, Window::HEIGHT)
+			.resize(Window::WIDTH, Window::HEIGHT).draw(Color(Palette::White, count));
+	}
+	else
+	{
+		
+		title_bgm.play();
+	}
+
 }
 
 void CEscape2D::game()
 {
+	title_bgm.stop();
+
+	//画像表示
 	texture_gameBG.resize(Window::WIDTH, Window::HEIGHT).draw();
-	texture_player.resize(player_size, player_size).draw(player_x, player_y);
+	texture_player.resize(player_size, player_size).draw(playerPos);
+	texture_item(itemNum * 32, (itemNum % 4) * 32, 32, 32).resize(player_size, player_size).draw(itemPos);
+	texture_enemy.resize(player_size, player_size).draw(enemy1Pos);
+	texture_enemy.resize(player_size, player_size).draw(enemy2Pos);
+	texture_enemy.resize(player_size, player_size).draw(enemy3Pos);
 
 	//テキスト表示
 	textWindow.draw(Color(255, 255, 255, 100));
@@ -106,458 +179,145 @@ void CEscape2D::game()
 	font(L"GetItem : ", haveItem, L"/", goalItem).draw(Window::WIDTH / 2, 5, Color(0, 0, 0));
 	//if (texture_player.intersects(rect));
 
-	//当たり判定の更新
-	player_collider = Rect(player_x, player_y, player_size, player_size);
-	item_collider = Circle(100, 100, 30);
-	item_collider.draw(Color(Palette::White));
+	//音の再生準備
 
-	playerMove(player_x, player_y);
+
+
+
+	//画面遷移用
+	rect_result.draw(Color(Palette::White, angle));;
+
+	//当たり判定の更新
+	player_collider = Rect(playerPos.x, playerPos.y, player_size, player_size);
+	item_collider = Circle(itemPos.x + (player_size / 2), itemPos.y + (player_size / 2), player_size / 3);
+	enemy1_collider = Rect(enemy1Pos.x, enemy1Pos.y, player_size, player_size);
+	enemy2_collider = Rect(enemy2Pos.x, enemy2Pos.y, player_size, player_size);
+	enemy3_collider = Rect(enemy3Pos.x, enemy3Pos.y, player_size, player_size);
+	//item_collider.draw(Color(Palette::White));
+
 
 	if (player_collider.intersects(item_collider))
 	{
+		pickup_se.play();
+		itemNum = Random(0, 7);
+		itemPos = Vec2(Random(50.0f, (float)Window::WIDTH - 50.0f), Random(50.0f, (float)Window::HEIGHT - 50.0f));
 		haveItem++;
-		item_collider = Circle(200, 100, 30);
+		//item_collider = Circle(200, 100, 30);
 	}
 
-	//カウントアップ
-	score++;
+	if (enemy_collision())
+	{
+		damage_se.play();
+		hitCount++;
+		playerPos.x = Window::WIDTH / 2;
+		playerPos.y = 100;
+		enemy3Pos = Vec2(Window::WIDTH / 2, 700);
+	}
+
+	//カウントアップ&動作制限
+	if (haveItem != goalItem)
+	{
+		game_bgm.play();
+
+		playerMove(playerPos);
+		enemyMove(Vec2(50, 50), Vec2(700, 700), enemy1Pos, 240, enemy_flag);
+		enemyMove(Vec2(700, 50), Vec2(50, 700), enemy2Pos, 240, enemy_flag);
+		enemyMove(enemy3Pos, playerPos, enemy3Pos, 240, dummy_flug);
+		score++;
+	}
+	else
+	{
+		game_bgm.pause(3.0s);
+
+		angle++;
+	}
+		
 }
 
 void CEscape2D::result()
 {
+	game_bgm.stop();
+
+	if(angle == 0)result_se.play();
+
 	rect_result.draw(Color(Palette::Black));
 
-	//		//リザルト
-	//		{
-	//			music.stop();
-	//			music_easy.stop();
-	//			result.play();
-	//			//結果画面の画像
-	//			Texture result("res/result.png");
-	//			Texture result1("res/result1.png");
-	//
-	//			int end_count = 0;
-	//			float alpha = 0;
-	//			//メインループ
-	//			while (1) {
-	//
-	//				//ウインドウが閉じられたら終了
-	//				if (!app_env.isOpen()) return 0;
-	//
-	//
-	//				//描画準備
-	//				app_env.setupDraw();
-	//
-	//				end_count += 1;
-	//				alpha += 0.01;
-	//
-	//				//リザルトイメージ表示
-	//				drawTextureBox(-512, -512, 1024, 1024,
-	//					0, 0, 1024, 1024,
-	//					result1,
-	//					Color(1, 1, 1, alpha));
-	//
-	//
-	//				if (end_count >= 120) {
-	//
-	//					if (app_env.isPushKey('A'))  break;				//タイトルに戻る
-	//					if (app_env.isPushKey('Q')) return 0;			//終了
-	//
-	//					drawTextureBox(-512, -512, 1024, 1024, 0, 0, 1024, 1024,
-	//						result,
-	//						Color(1, 1, 1));
-	//
-	//					//タイム表示
-	//					if (play_time >= 1) {
-	//						NUMBER Count = number_info[count_index];
-	//						NUMBER Count10 = number_info[count_index_ten];
-	//
-	//						drawTextureBox(-440, 450, Count.texture_width, Count.texture_height, Count.texture_x, Count.texture_y,
-	//							Count.texture_width, Count.texture_height,
-	//							number_image,
-	//							Color(1, 1, 1));
-	//
-	//						count_index = play_time / 60;
-	//
-	//						drawTextureBox(-472, 450, Count10.texture_width, Count10.texture_height, Count10.texture_x, Count10.texture_y,
-	//							Count10.texture_width, Count10.texture_height,
-	//							number_image,
-	//							Color(1, 1, 1));
-	//
-	//						count_index_ten = play_time / 60 / 10;
-	//					}
-	//					//タイム表示(イージー)
-	//					if (play_time_easy >= 1) {
-	//						NUMBER Count = number_info[count_index];
-	//						NUMBER Count10 = number_info[count_index_ten];
-	//
-	//						drawTextureBox(-440, 450, Count.texture_width, Count.texture_height, Count.texture_x, Count.texture_y,
-	//							Count.texture_width, Count.texture_height,
-	//							number_image,
-	//							Color(1, 1, 1));
-	//
-	//						count_index = play_time_easy / 60;
-	//
-	//						drawTextureBox(-472, 450, Count10.texture_width, Count10.texture_height, Count10.texture_x, Count10.texture_y,
-	//							Count10.texture_width, Count10.texture_height,
-	//							number_image,
-	//							Color(1, 1, 1));
-	//
-	//						count_index_ten = play_time_easy / 60 / 10;
-	//					}
-	//				}
+	bigFont(L"エスケープ成功！").drawCenter(Window::WIDTH / 2, 100);
+
+	if (angle > 60 * 4) font(L"Time : ", score / 60).draw(Window::WIDTH / 5, 250);
+	if(angle == 60 * 4) score_se.play();
+
+	if (angle > 60 * 5) font(L"EnemyHit : ", hitCount).draw(Window::WIDTH / 5, 300);
+	if(angle == 60 * 5) score_se.play();
+		
+
+	String text = L"ハイスコア更新!!";
+	if (angle > 60 * 7 && score < hiScore) 
+	{
+		for (size_t i = 0; i < text.length; ++i)
+		{
+			font(text[i]).draw(200 + 60 * i, 500, HSV(i * 20 + angle));
+		}
+
+		scoreWrite.write(L"Score", L"hiScore", score);
+		scoreWrite.write(L"Score", L"hiHitCount", hiHitCount);
+	}
+	if(angle == 60 * 7 && score < hiScore) 	hiscore_se.play();
+
+
+	if (angle > 60 * 9)result_bgm.play();
+
+	if (Input::AnyKeyClicked())flug = true;
+
+	angle++;
+
+	if (flug)
+	{
+		count++;
+	
+		result_bgm.pause(3.0s);
+		rect_result.draw(Color(Palette::White, count));
+	}
 }
 
-void CEscape2D::playerMove(float& x, float& y)
+void CEscape2D::playerMove(Vec2& pos)
 {
-	if (y < (Window::HEIGHT - player_size) && Input::KeyDown.pressed)y += move_speed;
-	if (y > 0 && Input::KeyUp.pressed)y -= move_speed;
-	if (x > 0 && Input::KeyLeft.pressed)x -= move_speed;
-	if (x < (Window::WIDTH - player_size) && Input::KeyRight.pressed)x += move_speed;
+	if (pos.y < (Window::HEIGHT - player_size) && Input::KeyDown.pressed)pos.y += move_speed;
+	if (pos.y > 0 && Input::KeyUp.pressed)pos.y -= move_speed;
+	if (pos.x > 0 && Input::KeyLeft.pressed)pos.x -= move_speed;
+	if (pos.x < (Window::WIDTH - player_size) && Input::KeyRight.pressed)pos.x += move_speed;
 }
 
-void CEscape2D::enemyMove()
+void CEscape2D::enemyMove(Vec2 startPos, Vec2 targetPos, Vec2& enemyPos, int frame, bool& flug)
 {
-	//				//敵
-	//				{
-	//					enemy_x += v;
-	//
-	//					drawTextureBox(enemy_x, enemy_y, 64, 64, 0, 0, 64, 64,
-	//						enemy_image,
-	//						Color(1, 1, 1));
-	//
-	//					if (enemy_x > 400) {
-	//						v = -v;
-	//					}
-	//					if (enemy_x < -400) {
-	//						v = -v;
-	//					}
-	//				}
-	//
-	//				//敵2
-	//				{
-	//					enemy2_x -= v;
-	//					enemy2_y -= v;
-	//					drawTextureBox(enemy2_x, enemy2_y, 64, 64, 0, 0, 64, 64,
-	//						enemy_image,
-	//						Color(1, 1, 1));
-	//
-	//					if (enemy2_x > 200) {
-	//						v = -v;
-	//					}
-	//					if (enemy2_x < -200) {
-	//						v = -v;
-	//					}
-	//					if (enemy2_y > 50) {
-	//						v = -v;
-	//					}
-	//					if (enemy2_y < -200) {
-	//						v = -v;
-	//					}
-	//				}
-	//
-	//				//敵3
-	//				{
-	//					enemy3_x += v;
-	//					enemy3_y -= v;
-	//					drawTextureBox(enemy3_x, enemy3_y, 64, 64, 0, 0, 64, 64,
-	//						enemy_image,
-	//						Color(1, 1, 1));
-	//
-	//					if (enemy3_x > 200) {
-	//						v = -v;
-	//					}
-	//					if (enemy3_x < -200) {
-	//						v = -v;
-	//					}
-	//					if (enemy3_y > 50) {
-	//						v = -v;
-	//					}
-	//					if (enemy3_y < -200) {
-	//						v = -v;
-	//					}
-	//				}
+
+	Vec2 move(targetPos.x - startPos.x, targetPos.y - startPos.y);
+
+	if (move.x > 0)
+	{
+		if (enemyPos.x > targetPos.x) flug = true;
+		else if (enemyPos.x < startPos.x) flug = false;
+	}
+	else if (move.x < 0)
+	{
+		if (enemyPos.x < targetPos.x) flug = true;
+		else if (enemyPos.x > startPos.x) flug = false;
+	}
+	if (flug) move = -move;
+
+	enemyPos += Vec2((move.x / frame), (move.y / frame));
+		
 }
 
-bool CEscape2D::RectCollision(Rect& obj1, Rect& obj2)
+bool CEscape2D::enemy_collision()
 {
-
-	//当たり判定
-	//					bool on_player = false;
-	//					//1匹目
-	//					if ((X + 40) > enemy_x)
-	//					{
-	//						if (X < (enemy_x + 40))
-	//						{
-	//							if ((Y + 40) > enemy_y)
-	//							{
-	//								if (Y < (enemy_y + 40))
-	//								{
-	//									on_player = true;
-	//								}
-	//							}
-	//						}
-	//					}
-	//					//2匹目
-	//					if ((X + 40) > enemy2_x)
-	//					{
-	//						if (X < (enemy2_x + 40))
-	//						{
-	//							if ((Y + 40) > enemy2_y)
-	//							{
-	//								if (Y < (enemy2_y + 40))
-	//								{
-	//									on_player = true;
-	//								}
-	//							}
-	//						}
-	//					}
-	//					//3匹目
-	//					if ((X + 40) > enemy3_x)
-	//					{
-	//						if (X < (enemy3_x + 40))
-	//						{
-	//							if ((Y + 40) > enemy3_y)
-	//							{
-	//								if (Y < (enemy3_y + 40))
-	//								{
-	//									on_player = true;
-	//								}
-	//							}
-	//						}
-	//					}
-	//
-	//					//当たり判定結果
-	//					if (on_player == true) {
-	//						X = 0, Y = -100;
-	//						play_point = 0;
-	//						damege.play();
-	//					}
-
-
+	if (player_collider.intersects(enemy1_collider) ||
+		player_collider.intersects(enemy2_collider) ||
+		player_collider.intersects(enemy3_collider))
+	{
+		return true;
+	}
 
 	return false;
 }
 
-
-
-//
-//
-//int main() {
-//
-//	while (1) {
-//
-//		//ランダム
-//		int random_count = 0;
-//
-//		/*
-//
-//		struct NUMBER
-//		{
-//			float texture_x, texture_y;						//切り取り位置
-//			float texture_width, texture_height;		//切り取り幅
-//
-//			int number;			//数字
-//		};
-//
-//		NUMBER number_info[] =
-//		{
-//			{ 0 * 32, 0, 32, 64, 0 },
-//			{ 1 * 32, 0, 32, 64, 1 },
-//			{ 2 * 32, 0, 32, 64, 2 },
-//			{ 3 * 32, 0, 32, 64, 3 },
-//			{ 4 * 32, 0, 32, 64, 4 },
-//			{ 5 * 32, 0, 32, 64, 5 },
-//			{ 6 * 32, 0, 32, 64, 6 },
-//			{ 7 * 32, 0, 32, 64, 7 },
-//			{ 8 * 32, 0, 32, 64, 8 },
-//			{ 9 * 32, 0, 32, 64, 9 },
-//			{ 0 * 32, 0, 32, 64, 0 },
-//			{ 1 * 32, 0, 32, 64, 1 },
-//			{ 2 * 32, 0, 32, 64, 2 },
-//			{ 3 * 32, 0, 32, 64, 3 },
-//			{ 4 * 32, 0, 32, 64, 4 },
-//			{ 5 * 32, 0, 32, 64, 5 },
-//			{ 6 * 32, 0, 32, 64, 6 },
-//			{ 7 * 32, 0, 32, 64, 7 },
-//			{ 8 * 32, 0, 32, 64, 8 },
-//			{ 9 * 32, 0, 32, 64, 9 },
-//			{ 0 * 32, 0, 32, 64, 0 },
-//			{ 1 * 32, 0, 32, 64, 1 },
-//			{ 2 * 32, 0, 32, 64, 2 },
-//			{ 3 * 32, 0, 32, 64, 3 },
-//			{ 4 * 32, 0, 32, 64, 4 },
-//			{ 5 * 32, 0, 32, 64, 5 },
-//			{ 6 * 32, 0, 32, 64, 6 },
-//			{ 7 * 32, 0, 32, 64, 7 },
-//			{ 8 * 32, 0, 32, 64, 8 },
-//			{ 9 * 32, 0, 32, 64, 9 },
-//			{ 0 * 32, 0, 32, 64, 0 }
-//		};
-//		Texture number_image("res/number.png");
-//
-//		struct ITEM
-//		{
-//			//画像からの切り抜き情報
-//			float texture_x, texture_y;						//切り取り位置
-//			float texture_width, texture_height;		//切り取り幅
-//		};
-//
-//		ITEM item_info[] =
-//		{
-//			{ 0 * 32, 0 * 32, 32, 32 },				//(切り取り位置x,y,幅x,y)
-//			{ 1 * 32, 0 * 32, 32, 32 },
-//			{ 2 * 32, 0 * 32, 32, 32 },
-//			{ 3 * 32, 0 * 32, 32, 32 },
-//			{ 0 * 32, 1 * 32, 32, 32 },
-//			{ 1 * 32, 1 * 32, 32, 32 },
-//			{ 2 * 32, 1 * 32, 32, 32 },
-//			{ 3 * 32, 1 * 32, 32, 32 },
-//			{ 0 * 32, 0 * 32, 32, 32 },				//(切り取り位置x,y,幅x,y)
-//			{ 1 * 32, 0 * 32, 32, 32 },
-//			{ 2 * 32, 0 * 32, 32, 32 },
-//			{ 3 * 32, 0 * 32, 32, 32 },
-//			{ 0 * 32, 1 * 32, 32, 32 },
-//			{ 1 * 32, 1 * 32, 32, 32 },
-//			{ 2 * 32, 1 * 32, 32, 32 },
-//			{ 3 * 32, 1 * 32, 32, 32 },
-//			{ 0 * 32, 0 * 32, 32, 32 },				//(切り取り位置x,y,幅x,y)
-//			{ 1 * 32, 0 * 32, 32, 32 },
-//			{ 2 * 32, 0 * 32, 32, 32 },
-//			{ 3 * 32, 0 * 32, 32, 32 },
-//			{ 0 * 32, 1 * 32, 32, 32 },
-//			{ 1 * 32, 1 * 32, 32, 32 },
-//			{ 2 * 32, 1 * 32, 32, 32 },
-//			{ 3 * 32, 1 * 32, 32, 32 }
-//		};
-//		//アイテムの画像を読み込む
-//		Texture item_image("res/item.png");
-//
-//		//アイテムをシャッフル
-//		int i = 0;
-//		while (i < 8)
-//		{
-//			std::swap(item_info[i],
-//				item_info[app_env.random().fromZeroToLast(8)]);
-//			i += 1;
-//		}
-//
-//		*/
-//
-//		//ゲームで使う様々な変数
-//		float angle = 0;
-//		float X = 0;
-//		float Y = -100;
-//		int play_time = 0;
-//		int play_time_easy = 0;
-//		float enemy_x = -100;
-//		float enemy_y = -250;
-//		float enemy2_x = 0;
-//		float enemy2_y = 0;
-//		float enemy3_x = 0;
-//		float enemy3_y = 0;
-//		int item_index = 0;
-//		int count_index = 0;
-//		int count_index_ten = 0;
-//		float x = 0;
-//		float y = 0;
-//		float v = 5;
-//		bool easy;
-//		int play_point = 0;
-//		float haikei_action = 1;
-//		float haikei_alpha = 1;
-//		float effect_time = 30;
-//		int GetRandom(int min, int max);
-//		x = GetRandom(-400, 400);
-//		y = GetRandom(-400, 30);
-//
-//
-//		if (app_env.isPushButton(GLFW_MOUSE_BUTTON_LEFT)) {
-//			// メインループ　　ここからステージ
-//			music.play();
-//
-//			app_env.bgColor(Color(1, 1, 1));
-//
-//			// ウインドウが開いている間はずっとこの中を繰り返す
-//			while (app_env.isOpen()) {
-//
-//				// 描画準備
-//				app_env.setupDraw();
-//
-//				//ランダム
-//				app_env.random().setSeed(random_count);
-
-//				ITEM Item = item_info[item_index];
-//
-//
-//				//背景描画
-//				drawTextureBox(0, 0, 1024, 1024, 0, 0, 1024, 1024, haikei, Color(1, 1, 1, haikei_alpha),
-//					M_PI * 0.00, Vec2f(haikei_action, haikei_action), Vec2f(512, 512));
-//
-//				//アイテム準備
-//				//
-//				drawTextureBox(x, y, Item.texture_width, Item.texture_height, Item.texture_x, Item.texture_y,
-//					Item.texture_width, Item.texture_height,
-//					item_image,
-//					Color(1, 1, 1));
-//
-//				bool on_item = false;
-//				bool effect_active = false;
-//
-
-//
-//				/*
-//				//アイテム当たり結果
-//				if (on_item == true) {
-//					item_index += 1;
-//					pickup_sound.play();
-//					x = GetRandom(-400, 400);
-//					y = GetRandom(-400, 30);
-//					play_point += 1;
-//					effect_time += 30;
-//				}
-//				if (effect_time > 30) {
-//					haikei_action += 0.01;
-//					haikei_alpha -= 0.01;
-//					effect_active = true;
-//					effect_time -= 1;
-//				}
-//				if (effect_time == 30) {
-//					haikei_action = 1;
-//					haikei_alpha = 1;
-//				}
-//				if (effect_active == true) {
-//					drawTextureBox(X, Y, 64, 64, 0, 0, 64, 64,
-//						effect,
-//						Color(1, 1, 1),
-//						M_PI * 0.00, Vec2f(1, 1), Vec2f(11, 10));
-//				}
-//
-//				//
-//
-//
-
-//
-//				//ポイントが8でリザルトに
-//				if (play_point == 8) {
-//					break;
-//				}
-//
-//				//ハイスコア更新チェック
-//				if (play_time / 60 < hi_score) {
-//					std::ofstream fstr("score.txt");
-//					if (fstr) {
-//						fstr << play_time / 60 << "秒" << std::endl;
-//					}
-//				}
-//
-//				//
-//				// 画面を更新
-//				app_env.update();
-//			} //ここまでステージ
-//		}
-//
-//
-//	}
-//	// アプリ終了
-//}
