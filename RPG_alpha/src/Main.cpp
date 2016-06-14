@@ -33,23 +33,25 @@ void Main(/*int args, char* argv[]*/)
 
 	//ゲーム時lookat(0, 5, 1000)pos(0, 8, -10)
 
-
+	Window::SetTitle(L"Let's Go Escape!");
 	Window::Resize(800, 800);
-	Graphics::SetBackground(Color(80, 160, 230));
+	Graphics::SetBackground(Color(Palette::Beige));
 
 
 	const Texture textureGround(L"Example/ground.jpg", TextureDesc::For3D);
 	const Mesh meshGround(MeshData::Plane(30, 30, { 6, 6 }));
+	Rect rect(0, 0, 800, 800);
 
 	bool camera_mode = false;
 	bool power = true;
 	int titleMode = 1;
-	int mode = 0;
+	int mode = 1;
 
 	Mat3x2 transform;
 
 	while (System::Update())
 	{
+
 		Graphics3D::SetCamera(camera);
 
 
@@ -70,16 +72,30 @@ void Main(/*int args, char* argv[]*/)
 			//// カメラの位置
 			//camera.pos = Vec3(0, 4.5, -24);
 
+
+			//選択ゲームのタイトル表示
+			switch (titleMode)
+			{
+			case 1:
+				ESGame2D.title();
+				break;
+			case 2:
+				rect.draw(Color(Palette::Brown));
+				break;
+			default:
+				if (titleMode == 0) titleMode = 2;
+				break;
+			}
+
+
 			top.draw(titleMode, mode, power);
+
+			//リセット
 			if (!power)
 			{
 				ESGame2D.reset();
 			}
 			
-			if (titleMode == 1)
-			{
-				ESGame2D.title();
-			}
 
 			break;
 
