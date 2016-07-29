@@ -3,6 +3,17 @@
 
 CMisc::CMisc()
 {
+	if (!FontManager::Register(L"res/font/PixelMplus12-Regular.ttf"))
+	{
+		font = Font(30);
+		bigFont = Font(50);
+		return;
+	}
+	else
+	{
+		font = Font(30, L"PixelMplus12");
+		bigFont = Font(50, L"PixelMplus12");
+	}
 }
 
 
@@ -23,7 +34,7 @@ void CMisc::createModel(Model model)
 	}
 }
 
-void CMisc::drawModel(Model model, Vec3 pos)
+void CMisc::drawModel(Model model, Vec3 pos, Vec3 rot)
 {
 	for (const auto& node : model.nodes())
 	{
@@ -33,7 +44,40 @@ void CMisc::drawModel(Model model, Vec3 pos)
 		}
 		else
 		{
-			node.mesh.translated(pos).draw(TextureAsset(node.material.diffuseTextureName));
+			node.mesh.translated(pos).rotated(rot).draw(TextureAsset(node.material.diffuseTextureName));
 		}
+	}
+}
+
+void CMisc::saveManager(string saveFileName, string dataName, int value, string dataName2, int value2)
+{
+	namespace propertyTree = boost::property_tree;
+
+	propertyTree::ptree pt;
+
+	pt.put(dataName, value);
+	pt.put(dataName2, value2);
+
+
+	write_ini(saveFileName, pt);
+
+}
+
+int CMisc::loadManager(string loadFileName, string dataName)
+{
+	namespace propertyTree = boost::property_tree;
+
+	propertyTree::ptree pt;
+
+	read_ini(loadFileName, pt);
+
+	if (boost::optional<int> value = pt.get_optional<int>(dataName))
+	{
+
+		return value.get();
+	}
+	else
+	{
+		cout << "ERROR:Not Data." << endl;
 	}
 }
