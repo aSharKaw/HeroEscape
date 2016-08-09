@@ -6,14 +6,15 @@ class CStage
 public:
 	CStage();
 
-	bool Game(int& score, int& hitCount, int hiScore, int hiHitCount);
+	bool Game(int& score, int& hitCount, int hiScore, int hiHitCount, bool debug);
 	void drawGame(int score, bool debug);
 	void Reset();
 
 private:
 	CMisc misc;
 
-	void playerMove(Vec2& pos);
+	void Debug();
+	int playerMove(Vec2& pos);
 	void enemyMove(Vec2 startPos, Vec2 targetPos, Vec2& enemyPos, int frame, bool& flug);
 	bool enemy_collision();
 
@@ -29,15 +30,21 @@ private:
 	const Texture texture_item = Texture(L"res/ESGame/image/item.png");
 	const Rect rect_result = Rect(0, 0, misc.WIDTH, misc.HEIGHT);
 
+	//ƒ‚ƒfƒ‹
+	Model stageObj = Model(L"res/obj/stage.obj");
+
+
 	//‰¹‚Ì—pˆÓ
 	const Sound game_bgm = Sound(L"res/ESGame/audio/game.mp3");
 	const Sound damage_se = Sound(L"res/ESGame/audio/damage.mp3");
 	const Sound pickup_se = Sound(L"res/ESGame/audio/pickup.mp3");
 
 	int angle;
+	int animation;
+	int playerMode;
 
-	float player_size;
-	Vec2 objectSize;
+	Vec2 playerSize;
+	float objectSize;
 	Vec2 playerPos;
 	float move_speed;
 

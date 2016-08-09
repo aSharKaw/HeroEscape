@@ -6,6 +6,8 @@ CStage::CStage()
 	game_bgm.setLoop(true);
 	game_bgm.setVolume(misc.bgmValue);
 
+	misc.createModel(stageObj);
+
 	Reset();
 }
 
@@ -15,9 +17,10 @@ void CStage::Reset()
 	Reseed(DateTime::Now().second);
 
 	angle = 0;
+	animation = 0;
 
-	player_size = misc.WIDTH / 16.0f;
-	objectSize = Vec2(misc.WIDTH / 16.0f, misc.WIDTH / 16.0f);
+	playerSize = Vec2(misc.WIDTH / 16.0f, misc.HEIGHT / 16.0f + 4);
+	objectSize = misc.WIDTH / 16.0f;
 
 	playerPos = Vec2(misc.WIDTH / 2, misc.HEIGHT / 2);
 	move_speed = 5.0f;
@@ -37,22 +40,29 @@ void CStage::Reset()
 
 }
 
-bool CStage::Game(int& score, int& hitCount, int hiScore, int hiHitCount)
+bool CStage::Game(int& score, int& hitCount, int hiScore, int hiHitCount, bool debug)
 {
 	drawGame(score, false);
 
 	//当たり判定の更新
-	player_collider = Rect(playerPos.x, playerPos.y, player_size, player_size);
-	item_collider = Circle(itemPos.x + (player_size / 2), itemPos.y + (player_size / 2), player_size / 3);
-	enemy1_collider = Rect(enemy1Pos.x, enemy1Pos.y, player_size, player_size);
-	enemy2_collider = Rect(enemy2Pos.x, enemy2Pos.y, player_size, player_size);
-	enemy3_collider = Rect(enemy3Pos.x, enemy3Pos.y, player_size, player_size);
-	
+	player_collider = Rect(playerPos.x, playerPos.y, playerSize.x, playerSize.y);
+	item_collider = Circle(itemPos.x + (objectSize / 2), itemPos.y + (objectSize / 2), objectSize / 3);
+	enemy1_collider = Rect(enemy1Pos.x, enemy1Pos.y, objectSize, objectSize);
+	enemy2_collider = Rect(enemy2Pos.x, enemy2Pos.y, objectSize, objectSize);
+	enemy3_collider = Rect(enemy3Pos.x, enemy3Pos.y, objectSize, objectSize);
+
+	if (Input::KeyShift.pressed && Input::KeyO.clicked)
+	{
+		haveItem = 8;
+	}
+
 	if (player_collider.intersects(item_collider))
 	{
 		pickup_se.play();
 		itemNum = Random(0, 7);
 		haveItem++;
+
+
 
 		if (haveItem == 8)
 		{
@@ -97,18 +107,25 @@ bool CStage::Game(int& score, int& hitCount, int hiScore, int hiHitCount)
 		return true;
 	}
 	return false;
+
+
+	if (debug)
+	{
+		Debug();
+	}
 }
 
 void CStage::drawGame(int score, bool debug)
 {
+	misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, 0, 0));
 
 	//画像表示
-	texture_gameBG.resize(misc.WIDTH, misc.HEIGHT).draw();
-	texture_player.resize(player_size, player_size).draw(playerPos);
-	texture_item(itemNum * 32, (itemNum % 4) * 32, 32, 32).resize(player_size, player_size).draw(itemPos);
-	texture_enemy.resize(player_size, player_size).draw(enemy1Pos);
-	texture_enemy.resize(player_size, player_size).draw(enemy2Pos);
-	texture_enemy.resize(player_size, player_size).draw(enemy3Pos);
+	//texture_gameBG.resize(misc.WIDTH, misc.HEIGHT).draw();
+	texture_player(((animation / 60) % 3) * 24, playerMode * 32, 24, 32).resize(playerSize.x, playerSize.y).draw(playerPos);
+	texture_item(itemNum * 32, (itemNum % 4) * 32, 32, 32).resize(objectSize, objectSize).draw(itemPos);
+	texture_enemy.resize(objectSize, objectSize).draw(enemy1Pos);
+	texture_enemy.resize(objectSize, objectSize).draw(enemy2Pos);
+	texture_enemy.resize(objectSize, objectSize).draw(enemy3Pos);
 
 	//テキスト表示
 	textWindow.draw(Color(255, 255, 255, 100));
@@ -118,20 +135,46 @@ void CStage::drawGame(int score, bool debug)
 	//画面遷移用
 	rect_result.draw(Color(Palette::White, angle));
 
-	//デバッグモードで当たり判定を表示
-	if (debug)
+	animation++;
+	playerMode = playerMove(Vec2(0, 0));
+}
+
+void CStage::Debug()
+{
+	//プレイヤーの当たり判定を表示
+	player_collider.draw(Color(Palette::Red, 100));
+
+	//球8個取得
+	if (Input::KeyP.clicked)
 	{
-		//プレイヤーの当たり判定を表示
-		player_collider.draw(Color(Palette::Red, 100));
+		haveItem = 8;
 	}
 }
 
-void CStage::playerMove(Vec2& pos)
+int CStage::playerMove(Vec2& pos)
 {
-	if (pos.y < (misc.HEIGHT - player_size) && Input::KeyDown.pressed)pos.y += move_speed;
-	if (pos.y > 0 && Input::KeyUp.pressed)pos.y -= move_speed;
-	if (pos.x > 0 && Input::KeyLeft.pressed)pos.x -= move_speed;
-	if (pos.x < (misc.WIDTH - player_size) && Input::KeyRight.pressed)pos.x += move_speed;
+	if (pos.y < (misc.HEIGHT - playerSize.y) && (Input::KeyDown.pressed || Input::KeyS.pressed))
+	{
+		pos.y += move_speed;
+		return 2;
+	}
+	if (pos.y > 0 && (Input::KeyUp.pressed || Input::KeyW.pressed))
+	{
+		pos.y -= move_speed;
+		return 0;
+	}
+	if (pos.x > 0 && (Input::KeyLeft.pressed || Input::KeyA.pressed))
+	{
+		pos.x -= move_speed;
+		return 3;
+	}
+	if (pos.x < (misc.WIDTH - playerSize.x) && (Input::KeyRight.pressed || Input::KeyD.pressed))
+	{
+		pos.x += move_speed;
+		return 1;
+	}
+
+	return 2;
 }
 
 void CStage::enemyMove(Vec2 startPos, Vec2 targetPos, Vec2& enemyPos, int frame, bool& flug)
