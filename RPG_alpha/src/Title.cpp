@@ -31,11 +31,7 @@ void CTitle::Draw()
 
 bool CTitle::Title(int hiScore, int hiHitCount)
 {
-		////ハイスコアのロード
-		//hiScore = scoreRead.getOr<int>(L"Score.HiScore", 99 * 60);
-		//hiHitCount = scoreRead.getOr<int>(L"Score.hiHitCount", 99);
-
-		misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, cloudAngle, 0));
+		misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, (float)cloudAngle / 100, 0));
 
 		//画像表示
 		//texture_titleBG.resize(misc.HEIGHT, misc.HEIGHT).draw();
