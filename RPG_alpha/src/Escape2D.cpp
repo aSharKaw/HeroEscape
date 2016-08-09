@@ -11,7 +11,7 @@ CEscape2D::CEscape2D()
 	result_bgm.setVolume(misc.bgmValue);
 
 	result_se.setVolume(misc.bgmValue);
-
+	debug = false;
 }
 
 CEscape2D::~CEscape2D()
@@ -31,9 +31,8 @@ void CEscape2D::reset()
 	flug = false;
 
 	//ハイスコアのロード
-	//INIReader宣言時にしかロードされないので、変更の必要あり
-	hiScore = scoreRead.getOr<int>(L"Score.HiScore", 99 * 60);
-	hiHitCount = scoreRead.getOr<int>(L"Score.hiHitCount", 99);
+	hiScore = misc.loadManager(loadFile, "Score.HiScore");
+	hiHitCount = misc.loadManager(loadFile, "Score.hiHitCount");
 
 	score = 0;
 	hitCount = 0;
@@ -43,10 +42,21 @@ void CEscape2D::reset()
 
 void CEscape2D::main()
 {
+	// カメラの注視点
+	camera.lookat = cameraLook;
+
+	// カメラの位置
+	camera.pos = cameraPos;
+
+	Graphics3D::SetCamera(camera);
+
 	//メインループ
 	switch (mode)
 	{
 	case 0:
+		//カメラ変更
+		cameraLook = Vec3(0, -70, 100);
+		cameraPos = Vec3(0, 150, -200);
 
 		if (title.Title(hiScore, hiHitCount))
 		{
@@ -56,18 +66,20 @@ void CEscape2D::main()
 		
 		break;
 	case 1:
+		cameraLook = Vec3(0, 0, 0);
+		cameraPos = Vec3(0, 0, -200);
+		if (Input::KeyB.pressed)
+		{
+			camera.lookat.z = camera.lookat.z + 1;
+		}
+		ClearPrint();
+		Println(camera.lookat.z);
 
-		if (stage.Game(score, hitCount, hiScore, hiHitCount))
+		if (stage.Game(score, hitCount, hiScore, hiHitCount, debug))
 		{
 			stage.Reset();
 			mode = 2;
 		}
-		//game();
-		//if (angle > 255)
-		//{
-		//	angle = 0;
-		//	mode = 2;
-		//}
 		break;
 	case 2:
 		result();
@@ -108,8 +120,9 @@ void CEscape2D::result()
 		{
 			misc.font(text[i]).draw(200 + 60 * i, 500, HSV(i * 20 + angle));
 		}
+		//名前入力(3文字)
+		//Input::GetCharsHelper(saveName);
 
-		misc.saveManager("res/ESGame/HiScore.ini", "Score.HiScore", score, "Score.hiHitCount", hitCount);
 	}
 	if (angle == 60 * 7 && score < hiScore) 	hiscore_se.play();
 
@@ -122,6 +135,8 @@ void CEscape2D::result()
 
 	if (flug)
 	{
+		misc.saveManager("res/ESGame/HiScore.ini", "Score.HiScore", score, "Score.hiHitCount", hitCount);
+
 		count++;
 
 		result_bgm.pause(3.0s);

@@ -8,20 +8,15 @@ void Main()
 {
 	CEscape2D ESGame2D;
 
-	Camera camera;
+	//Camera camera;
 
 	// カメラの注視点
-	camera.lookat = Vec3(0, -70, 100);
+	//camera.lookat = Vec3(0, -70, 100);
 
 	// カメラの位置
-	camera.pos = Vec3(0, 150, -200);
-	/*
-	// カメラの注視点
-	camera.lookat = Vec3(0, 1.2, 300);
+	//camera.pos = Vec3(0, 150, -200);
 
-	// カメラの位置
-	camera.pos = Vec3(0, 4.5, -24);
-	*/
+
 	//ゲーム時lookat(0, 5, 1000)pos(0, 8, -10)
 
 
@@ -41,7 +36,7 @@ void Main()
 	while (System::Update())
 	{
 
-		Graphics3D::SetCamera(camera);
+		//Graphics3D::SetCamera(camera);
 
 		ESGame2D.main();
 

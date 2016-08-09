@@ -1,6 +1,4 @@
 #pragma once
-//#include <Siv3D.hpp>
-//#include "Save.h"
 #include "Misc.h"
 #include "Title.h"
 #include "Stage.h"
@@ -14,6 +12,7 @@ public:
 	CMisc misc;
 	CTitle title;
 	CStage stage;
+	Camera camera;
 
 	//フォントウィンドウ
 	Rect textWindow;
@@ -27,11 +26,18 @@ public:
 	int hiScore;
 	int hitCount;
 	int hiHitCount;
+	String saveName;
+
+	bool debug;
 
 private:
 	//データロード用
-	INIReader scoreRead = INIReader(L"res/ESGame/HiScore.ini");
+	string loadFile = "res/ESGame/HiScore.ini";
 
+	//カメラ
+	Vec3 cameraLook = Vec3(0, -70, 100);
+	Vec3 cameraPos = Vec3(0, 150, -200);
+	
 	const Rect rect_result = Rect(0, 0, misc.WIDTH, misc.HEIGHT);
 
 	const Sound result_bgm = Sound(L"res/ESGame/audio/result.mp3");
