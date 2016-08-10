@@ -6,7 +6,7 @@ CTitle::CTitle()
 	title_bgm.setLoop(true);
 	title_bgm.setVolume(misc.bgmValue);
 
-	misc.createModel(stageObj);
+	//misc.createModel(stageObj);
 
 	Reset();
 }
@@ -31,10 +31,10 @@ void CTitle::Draw()
 
 bool CTitle::Title(int hiScore, int hiHitCount)
 {
-		misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, (float)cloudAngle / 100, 0));
+		//misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, (float)cloudAngle / 100, 0));
 
 		//‰æ‘œ•\Ž¦
-		//texture_titleBG.resize(misc.HEIGHT, misc.HEIGHT).draw();
+		texture_titleBG.resize(misc.HEIGHT, misc.HEIGHT).draw();
 		texture_cloud(cloudAngle, cloudAngle, misc.WIDTH, misc.HEIGHT)
 			.resize(misc.WIDTH, misc.HEIGHT).draw();
 		texture_titleLogo.resize(misc.WIDTH, misc.HEIGHT).draw();

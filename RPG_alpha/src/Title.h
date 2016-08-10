@@ -35,7 +35,7 @@ private:
 	const Sound title_bgm = Sound(L"res/ESGame/audio/title.mp3");
 
 	//モデル
-	Model stageObj = Model(L"res/obj/stage.obj");
+	//Model stageObj = Model(L"res/obj/stage.obj");
 
 	//ハイスコア
 	//int hiScore;

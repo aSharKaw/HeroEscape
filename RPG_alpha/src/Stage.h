@@ -31,7 +31,7 @@ private:
 	const Rect rect_result = Rect(0, 0, misc.WIDTH, misc.HEIGHT);
 
 	//ƒ‚ƒfƒ‹
-	Model stageObj = Model(L"res/obj/stage.obj");
+	//Model stageObj = Model(L"res/obj/stage.obj");
 
 
 	//‰¹‚Ì—pˆÓ

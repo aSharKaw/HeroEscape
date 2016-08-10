@@ -6,7 +6,7 @@ CStage::CStage()
 	game_bgm.setLoop(true);
 	game_bgm.setVolume(misc.bgmValue);
 
-	misc.createModel(stageObj);
+	//misc.createModel(stageObj);
 
 	Reset();
 }
@@ -117,10 +117,10 @@ bool CStage::Game(int& score, int& hitCount, int hiScore, int hiHitCount, bool d
 
 void CStage::drawGame(int score, bool debug)
 {
-	misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, 0, 0));
+	//misc.drawModel(stageObj, Vec3(0, 0, 0), Vec3(0, 0, 0));
 
 	//‰æ‘œ•\Ž¦
-	//texture_gameBG.resize(misc.WIDTH, misc.HEIGHT).draw();
+	texture_gameBG.resize(misc.WIDTH, misc.HEIGHT).draw();
 	texture_player(((animation / 60) % 3) * 24, playerMode * 32, 24, 32).resize(playerSize.x, playerSize.y).draw(playerPos);
 	texture_item(itemNum * 32, (itemNum % 4) * 32, 32, 32).resize(objectSize, objectSize).draw(itemPos);
 	texture_enemy.resize(objectSize, objectSize).draw(enemy1Pos);
