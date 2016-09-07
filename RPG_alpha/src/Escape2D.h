@@ -6,20 +6,17 @@
 
 class CEscape2D
 {
-public:
-	CEscape2D();
-	~CEscape2D();
-
+private:
 	CMisc misc;
 	CTitle title;
 	CStage stage;
 	CResult result;
 
-	//フォントウィンドウ
-	Rect textWindow;
+	//データロード用
+	string loadFile = "res/ESGame/HiScore.ini";
 
-	void reset();
-	void main();
+	//Mat3x2 transform;
+	int mode;
 
 	int score;
 	int hiScore;
@@ -29,11 +26,14 @@ public:
 
 	bool debug;
 
-private:
-	//データロード用
-	string loadFile = "res/ESGame/HiScore.ini";
+public:
+	CEscape2D();
+	~CEscape2D();
 
-	//Mat3x2 transform;
-	int mode;
+	//フォントウィンドウ
+	Rect textWindow;
+
+	void reset();
+	void main();
 };
 

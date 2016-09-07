@@ -6,16 +6,7 @@
 
 class CTitle
 {
-public:
-	CTitle();
-	~CTitle();
-
-	void Reset();
-	
-	bool Title(int hiScore, int hiHitCount);
-
 private:
-
 	CMisc misc;
 
 	void Draw();
@@ -46,4 +37,12 @@ private:
 	int cloudAngle;
 
 	const int SCENE_MOVE_TIME = 60 * 4;
+
+public:
+	CTitle();
+	~CTitle();
+
+	void Reset();
+	
+	bool Title(int hiScore, int hiHitCount);
 };

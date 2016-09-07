@@ -3,13 +3,6 @@
 
 class CStage
 {
-public:
-	CStage();
-
-	bool Game(int& score, int& hitCount, int hiScore, int hiHitCount, bool debug);
-	void drawGame(int score, bool debug);
-	void Reset();
-
 private:
 	CMisc misc;
 
@@ -17,8 +10,6 @@ private:
 	int playerMove(Vec2& pos);
 	void enemyMove(Vec2 startPos, Vec2 targetPos, Vec2& enemyPos, int frame, bool& flug);
 	bool enemy_collision();
-
-	//フォント
 
 	//フォントウィンドウ
 	const Rect textWindow = Rect(0, 5, misc.WIDTH, 60);
@@ -67,5 +58,11 @@ private:
 	int haveItem;
 	int goalItem;
 
+public:
+	CStage();
+
+	bool Game(int& score, int& hitCount, int hiScore, int hiHitCount, bool debug);
+	void drawGame(int score, bool debug);
+	void Reset();
 };
 

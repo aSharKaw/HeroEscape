@@ -3,12 +3,8 @@
 
 class CResult
 {
-public:
-	CResult();
-	void Reset();
+private:
 	CMisc misc;
-
-	bool Result(int score, int hitcount, int& hiScore);
 
 	const Rect rect_result = Rect(0, 0, misc.WIDTH, misc.HEIGHT);
 
@@ -21,5 +17,11 @@ public:
 	int count;
 
 	bool flug;
+
+public:
+
+	CResult();
+	void Reset();
+	bool Result(int score, int hitcount, int& hiScore);
 };
 
